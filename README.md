@@ -23,7 +23,7 @@ Supports virtual watch groups, with live chat, emoji reactions, and Alexa voice 
 5) 🏆 Gamified Engagement
 Encourages viewing through streaks, watch challenges, and weekly recaps.
 
-## ** Architecture Design **🛠️ 
+## **Architecture Design**🛠️ 
 
 ![Screenshot](Assets/Screenshot%202025-06-09%20162234.png)
 
