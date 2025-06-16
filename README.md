@@ -10,7 +10,8 @@ Develop a personalized content recommendation engine for Fire TV that considers 
 
 ## Architecture Design 🛠️ ##
 
-![1](Assets/Screenshot 2025-06-09 162234.png)
+![Screenshot](Assets/Screenshot%202025-06-09%20162234.png)
+
 
 
 
