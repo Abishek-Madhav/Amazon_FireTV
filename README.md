@@ -1,3 +1,3 @@
-# Enhanced Fire TV Experience 🔥📺#
+# Enhanced Fire TV Experience 🔥📺
 
 ## Problem statement ##
