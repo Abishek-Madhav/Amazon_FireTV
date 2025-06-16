@@ -6,6 +6,11 @@ Develop a personalized content recommendation engine for Fire TV that considers 
 # Have a look! #
 [Demo video of our prototype 🎥](https://www.youtube.com/watch?v=GM9HXfpF_uE)
 
-## Proposed Solution ##
+## **Proposed Solution** ##
+
+## Architecture Design 🛠️ ##
+
+
+
 
 
