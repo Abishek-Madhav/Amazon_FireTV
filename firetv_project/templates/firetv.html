@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fire TV AI Recommendation Engine</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
+            color: #fff;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+        .nav-links a {
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .nav-links a:hover {
+            color: #ff6b35;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #ff6b35;
+            transition: width 0.3s;
+        }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="grad" cx="50%" cy="50%" r="50%"><stop offset="0%" style="stop-color:%23ff6b35;stop-opacity:0.1"/><stop offset="100%" style="stop-color:%23ff6b35;stop-opacity:0"/></radialGradient></defs><circle cx="200" cy="200" r="100" fill="url(#grad)"/><circle cx="800" cy="300" r="150" fill="url(#grad)"/><circle cx="300" cy="700" r="120" fill="url(#grad)"/></svg>') no-repeat center center;
+            background-size: cover;
+            animation: float 20s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0); }
+            50% { transform: translateY(-20px) rotate(2deg); }
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 600px;
+        }
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #fff, #ff6b35);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: slideInLeft 1s;
+        }
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            animation: slideInLeft 1s 0.2s both;
+        }
+        .cta-button {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: #fff;
+            padding: 15px 35px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            animation: slideInLeft 1s 0.4s both;
+            box-shadow: 0 10px 30px rgba(255,107,53,0.3);
+        }
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255,107,53,0.4);
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px);}
+            to { opacity: 1; transform: translateX(0);}
+        }
+        /* Demo Section */
+        .demo-section {
+            padding: 100px 0;
+            background: rgba(255,255,255,0.02);
+        }
+        .section-title {
+            text-align: center;
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 60px;
+            background: linear-gradient(45deg, #fff, #ff6b35);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .demo-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: start;
+        }
+        .user-input-panel, .recommendations-panel {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #ff6b35;
+        }
+        .input-group select,
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .input-group select:focus,
+        .input-group input:focus {
+            outline: none;
+            border-color: #ff6b35;
+            box-shadow: 0 0 20px rgba(255,107,53,0.2);
+        }
+        .input-group select option {
+            background: #1a1a2e;
+            color: #fff;
+            border: none;
+            padding: 10px;
+        }
+
+        .input-group select option:hover,
+        .input-group select option:focus,
+        .input-group select option:checked {
+            background: #16213e;
+            color: #ff6b35;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .checkbox-item {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .checkbox-item:hover,
+        .checkbox-item.selected {
+            background: #ff6b35;
+            border-color: #ff6b35;
+        }
+        .generate-btn {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: #fff;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255,107,53,0.3);
+        }
+        .recommendations-panel {
+            min-height: 500px;
+        }
+        .recommendation-card {
+            background: rgba(255,255,255,0.08);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ff6b35;
+            transition: all 0.3s;
+            animation: slideInRight 0.5s;
+        }
+        .recommendation-card:hover {
+            transform: translateX(10px);
+            background: rgba(255,255,255,0.12);
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px);}
+            to { opacity: 1; transform: translateX(0);}
+        }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ff6b35;
+        }
+        .card-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .genre-tag {
+            background: rgba(255,107,53,0.2);
+            color: #ff6b35;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .stars {
+            color: #ffd700;
+        }
+        /* Features Section */
+        .features-section {
+            padding: 100px 0;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(255,107,53,0.1);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #ff6b35;
+        }
+        /* Social Features */
+        .social-section {
+            padding: 100px 0;
+            background: rgba(255,255,255,0.02);
+        }
+        .social-demo {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            margin-top: 40px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .group-members {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .member-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .voting-panel {
+            background: rgba(255,255,255,0.08);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .vote-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .vote-option:hover {
+            background: rgba(255,107,53,0.1);
+        }
+        .vote-bar {
+            width: 200px;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .vote-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            border-radius: 4px;
+            transition: width 0.5s;
+        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .demo-container { grid-template-columns: 1fr; gap: 30px; }
+            .nav-links { display: none; }
+            .features-grid { grid-template-columns: 1fr; }
+        }
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #ff6b35;
+            animation: spin 1s infinite linear;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav container">
+            <div class="logo">🔥 Fire TV AI</div>
+            <ul class="nav-links">
+                <li><a href="#demo">Live Demo</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#social">Social AI</a></li>
+                <li><a href="#tech">Technology</a></li>
+            </ul>
+        </nav>
+    </header>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg"></div>
+        <div class="container">
+            <div class="hero-content">
+                <h1>Innos AI Recommendations</h1>
+                <p>Experience the future of personalized content discovery with our revolutionary Fire TV recommendation engine. Powered by advanced AI that understands your mood, time, and social context.</p>
+                <button class="cta-button" onclick="scrollToDemo()">Try Live Demo</button>
+            </div>
+        </div>
+    </section>
+    <!-- Demo Section -->
+    <section id="demo" class="demo-section">
+        <div class="container">
+            <h2 class="section-title"> Personalized Recommendation Demo</h2>
+            <div class="demo-container">
+                <!-- User Input Panel -->
+                <div class="user-input-panel">
+                    <h3 style="margin-bottom:25px;color:#ff6b35;">🎭 Personalize Your Experience</h3>
+                    
+                    <div class="input-group">
+                        <label>👤 User ID</label>
+                        <input type="text" id="userId" placeholder="Enter your user ID (e.g., user_12345)" />
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>🎂 Age Group</label>
+                        <select id="ageGroup">
+                            <option value="teen">👶 Teen (13-17)</option>
+                            <option value="young_adult">🧑 Young Adult (18-25)</option>
+                            <option value="adult">👨 Adult (26-35)</option>
+                            <option value="middle_age">👩 Middle Age (36-50)</option>
+                            <option value="senior">👴 Senior (51+)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>😊 Current Mood</label>
+                        <select id="mood">
+                            <option value="happy">😊 Happy</option>
+                            <option value="excited">🚀 Excited</option>
+                            <option value="relaxed">😌 Relaxed</option>
+                            <option value="romantic">💕 Romantic</option>
+                            <option value="adventurous">🗺️ Adventurous</option>
+                            <option value="nostalgic">📸 Nostalgic</option>
+                            <option value="stressed">😰 Stressed</option>
+                            <option value="sad">😢 Sad</option>
+                            <option value="energetic">⚡ Energetic</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>⏰ Hour of Day</label>
+                        <select id="hourOfDay">
+                            <option value="6">🌅 6 AM - Early Morning</option>
+                            <option value="8">🌄 8 AM - Morning</option>
+                            <option value="12">☀️ 12 PM - Noon</option>
+                            <option value="15">🌤️ 3 PM - Afternoon</option>
+                            <option value="18">🌆 6 PM - Evening</option>
+                            <option value="20">🌇 8 PM - Prime Time</option>
+                            <option value="22">🌙 10 PM - Night</option>
+                            <option value="24">🌃 12 AM - Late Night</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>📅 Day of Week</label>
+                        <select id="dayOfWeek">
+                            <option value="1">Monday</option>
+                            <option value="2">Tuesday</option>
+                            <option value="3">Wednesday</option>
+                            <option value="4">Thursday</option>
+                            <option value="5">Friday</option>
+                            <option value="6">Saturday</option>
+                            <option value="7">Sunday</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>🎉 Weekend Status</label>
+                        <select id="isWeekend">
+                            <option value="0">📅 Weekday</option>
+                            <option value="1">🎉 Weekend</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>⏱️ Average Session Duration (minutes)</label>
+                        <input type="number" id="avgSessionDuration" placeholder="e.g., 45" min="5" max="300" value="60" />
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>🌐 Social Activity Level</label>
+                        <select id="socialActivityLevel">
+                            <option value="low">🔇 Low - Rarely share/interact</option>
+                            <option value="medium">📢 Medium - Occasional sharing</option>
+                            <option value="high">🔊 High - Very active socially</option>
+                            <option value="very_high">📣 Very High - Influencer level</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>👥 Group Watching</label>
+                        <select id="isGroupWatch">
+                            <option value="0">🙋 Solo Viewing</option>
+                            <option value="1">👫 Group Watching</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>👨‍👩‍👧‍👦 Group Size</label>
+                        <select id="groupSize">
+                            <option value="1">1 (Solo)</option>
+                            <option value="2">2 (Couple)</option>
+                            <option value="3">3 (Small Group)</option>
+                            <option value="4">4 (Family)</option>
+                            <option value="5">5 (Large Group)</option>
+                            <option value="6">6+ (Party)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>🎬 Recent Genre Preference</label>
+                        <select id="recentGenrePreference">
+                            <option value="action">🎬 Action</option>
+                            <option value="comedy">😂 Comedy</option>
+                            <option value="drama">🎭 Drama</option>
+                            <option value="sci-fi">🚀 Sci-Fi</option>
+                            <option value="romance">💕 Romance</option>
+                            <option value="thriller">😱 Thriller</option>
+                            <option value="horror">👻 Horror</option>
+                            <option value="documentary">📺 Documentary</option>
+                            <option value="animation">🎨 Animation</option>
+                            <option value="fantasy">🧙 Fantasy</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>⭐ Average Rating You Give (1-10)</label>
+                        <input type="number" id="avgRatingGiven" placeholder="e.g., 7.5" min="1" max="10" step="0.1" value="7.0" />
+                    </div>
+                    
+                    <button class="generate-btn" onclick="generateRecommendations()">
+                        <span id="generateText"> Generate AI Recommendations</span>
+                        <div class="loading hidden" id="loadingSpinner"></div>
+                    </button>
+                </div>
+                <!-- Recommendations Panel -->
+                <div class="recommendations-panel">
+                    <h3 style="margin-bottom:25px;color:#ff6b35;">🎬 Your Personalized Recommendations</h3>
+                    <div id="recommendationsContainer">
+                        <div style="text-align:center;opacity:0.6;padding:60px 20px;">
+                            <div style="font-size:3rem;margin-bottom:20px;"></div>
+                            <p>Configure your preferences and click "Generate AI Recommendations" to see personalized content suggestions powered by our advanced AI engine.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+        <div class="container">
+            <h2 class="section-title">🚀 Revolutionary AI Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3 class="feature-title">Two-Tower Deep Learning</h3>
+                    <p>Advanced neural architecture that learns user preferences and content features simultaneously for unprecedented accuracy.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎭</div>
+                    <h3 class="feature-title">Mood-Based Intelligence</h3>
+                    <p>Revolutionary mood detection that adapts recommendations to your emotional state and predicts mood transitions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⏰</div>
+                    <h3 class="feature-title">Contextual Timing</h3>
+                    <p>Smart time-aware recommendations that understand viewing patterns and optimize content for different times of day.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Real-Time Analytics</h3>
+                    <p>Advanced user behavior analysis with completion rate tracking, binge-watching detection, and preference evolution.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"></div>
+                    <h3 class="feature-title">Multi-Strategy Fusion</h3>
+                    <p>Combines collaborative filtering, content-based filtering, and social signals for comprehensive recommendations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3 class="feature-title">Adaptive Learning</h3>
+                    <p>Continuously learns from user interactions to improve recommendations and discover new preference patterns.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Features Section -->
+    <section id="social" class="social-section">
+        <div class="container">
+            <h2 class="section-title">👥 Social AI Features</h2>
+            <div class="social-demo">
+                <h3 style="margin-bottom:25px;color:#ff6b35;">🎬 Group Watching Session</h3>
+                <div class="group-members">
+                    <div class="member-avatar">A</div>
+                    <div class="member-avatar">B</div>
+                    <div class="member-avatar">C</div>
+                    <div class="member-avatar">D</div>
+                </div>
+                <p style="margin-bottom:20px;opacity:0.8;">
+                    Active Group Session - 4 Members Connected
+                </p>
+                <div class="voting-panel">
+                    <h4 style="margin-bottom:20px;color:#ff6b35;">🗳️ Live Content Voting</h4>
+                    <div class="vote-option">
+                        <div>
+                            <strong>Avengers: Endgame</strong>
+                            <div style="font-size:0.9rem;opacity:0.8;">
+                                Action • Marvel • 3h 1m
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:15px;">
+                            <div class="vote-bar">
+                                <div class="vote-fill" style="width:75%;"></div>
+                            </div>
+                            <span>75%</span>
+                        </div>
+                    </div>
+                    <div class="vote-option">
+                        <div>
+                            <strong>The Grand Budapest Hotel</strong>
+                            <div style="font-size:0.9rem;opacity:0.8;">
+                                Comedy • Drama • 1h 39m
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:15px;">
+                            <div class="vote-bar">
+                                <div class="vote-fill" style="width:50%;"></div>
+                            </div>
+                            <span>50%</span>
+                        </div>
+                    </div>
+                    <div class="vote-option">
+                        <div>
+                            <strong>Stranger Things S4</strong>
+                            <div style="font-size:0.9rem;opacity:0.8;">
+                                Thriller • Netflix • 1h 15m
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:15px;">
+                            <div class="vote-bar">
+                                <div class="vote-fill" style="width:25%;"></div>
+                            </div>
+                            <span>25%</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top:30px;padding:20px;background:rgba(255,107,53,0.1);border-radius:10px;border-left:4px solid #ff6b35;">
+                    <h4 style="color:#ff6b35;margin-bottom:10px;">🤖 AI Group Intelligence</h4>
+                    <p style="opacity:0.9;">
+                        Our AI analyzes group preferences, balances individual tastes, and suggests compromise options that maximize group satisfaction. Real-time mood detection ensures everyone enjoys the experience.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology Section -->
+    <section id="tech" class="features-section">
+        <div class="container">
+            <h2 class="section-title">🛠️ Technology Stack</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🐍</div>
+                    <h3 class="feature-title">TensorFlow & Keras</h3>
+                    <p>Deep learning models with advanced neural architectures for recommendation accuracy.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Pandas & NumPy</h3>
+                    <p>High-performance data processing and analysis for real-time recommendations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"></div>
+                    <h3 class="feature-title">Scikit-learn</h3>
+                    <p>Machine learning pipelines for preprocessing, feature engineering, and model evaluation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">Real-Time Processing</h3>
+                    <p>Optimized algorithms for instant recommendations with sub-second response times.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        // Smooth scrolling
+        // Smooth scrolling
+        function scrollToDemo() {
+            document.getElementById('demo').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+
+        // Sample content database
+        const contentDatabase = [
+            {
+                title: "The Matrix Resurrections",
+                genre: "sci-fi",
+                rating: 8.2,
+                mood: ["excited", "adventurous"],
+                timeSlots: [18, 20, 22],
+                ageGroups: ["young_adult", "adult"],
+                groupFriendly: true,
+                duration: 148
+            },
+            {
+                title: "Friends: The Reunion",
+                genre: "comedy",
+                rating: 9.1,
+                mood: ["happy", "nostalgic"],
+                timeSlots: [12, 15, 18],
+                ageGroups: ["young_adult", "adult", "middle_age"],
+                groupFriendly: true,
+                duration: 104
+            },
+            {
+                title: "Stranger Things 4",
+                genre: "thriller",
+                rating: 8.9,
+                mood: ["excited", "adventurous"],
+                timeSlots: [20, 22, 24],
+                ageGroups: ["teen", "young_adult", "adult"],
+                groupFriendly: true,
+                duration: 85
+            },
+            {
+                title: "The Crown",
+                genre: "drama",
+                rating: 8.7,
+                mood: ["relaxed", "nostalgic"],
+                timeSlots: [15, 18, 20],
+                ageGroups: ["adult", "middle_age", "senior"],
+                groupFriendly: false,
+                duration: 58
+            },
+            {
+                title: "Top Gun: Maverick",
+                genre: "action",
+                rating: 9.3,
+                mood: ["excited", "energetic"],
+                timeSlots: [18, 20, 22],
+                ageGroups: ["young_adult", "adult", "middle_age"],
+                groupFriendly: true,
+                duration: 130
+            },
+            {
+                title: "Emily in Paris",
+                genre: "romance",
+                rating: 7.8,
+                mood: ["romantic", "happy"],
+                timeSlots: [15, 18, 20],
+                ageGroups: ["young_adult", "adult"],
+                groupFriendly: false,
+                duration: 32
+            },
+            {
+                title: "The Office",
+                genre: "comedy",
+                rating: 9.0,
+                mood: ["happy", "relaxed"],
+                timeSlots: [12, 15, 18, 20],
+                ageGroups: ["young_adult", "adult", "middle_age"],
+                groupFriendly: true,
+                duration: 22
+            },
+            {
+                title: "Avatar: The Way of Water",
+                genre: "fantasy",
+                rating: 8.8,
+                mood: ["adventurous", "excited"],
+                timeSlots: [18, 20, 22],
+                ageGroups: ["teen", "young_adult", "adult"],
+                groupFriendly: true,
+                duration: 192
+            },
+            {
+                title: "Midnight Mass",
+                genre: "horror",
+                rating: 8.4,
+                mood: ["adventurous"],
+                timeSlots: [22, 24],
+                ageGroups: ["adult", "middle_age"],
+                groupFriendly: false,
+                duration: 64
+            },
+            {
+                title: "Bridgerton",
+                genre: "romance",
+                rating: 8.6,
+                mood: ["romantic", "happy"],
+                timeSlots: [15, 18, 20],
+                ageGroups: ["young_adult", "adult"],
+                groupFriendly: false,
+                duration: 57
+            },
+            {
+                title: "Planet Earth III",
+                genre: "documentary",
+                rating: 9.4,
+                mood: ["relaxed", "happy"],
+                timeSlots: [12, 15, 18],
+                ageGroups: ["teen", "young_adult", "adult", "middle_age", "senior"],
+                groupFriendly: true,
+                duration: 50
+            },
+            {
+                title: "Encanto",
+                genre: "animation",
+                rating: 8.9,
+                mood: ["happy", "energetic"],
+                timeSlots: [12, 15, 18],
+                ageGroups: ["teen", "young_adult", "adult"],
+                groupFriendly: true,
+                duration: 102
+            }
+        ];
+
+        // AI Recommendation Algorithm
+        function generateRecommendations() {
+            const generateBtn = document.querySelector('.generate-btn');
+            const generateText = document.getElementById('generateText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const container = document.getElementById('recommendationsContainer');
+
+            // Show loading state
+            generateText.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+            generateBtn.disabled = true;
+
+            // Simulate AI processing time
+            setTimeout(() => {
+                // Get user inputs
+                const userInputs = {
+                    userId: document.getElementById('userId').value || 'user_demo',
+                    ageGroup: document.getElementById('ageGroup').value,
+                    mood: document.getElementById('mood').value,
+                    hourOfDay: parseInt(document.getElementById('hourOfDay').value),
+                    dayOfWeek: parseInt(document.getElementById('dayOfWeek').value),
+                    isWeekend: parseInt(document.getElementById('isWeekend').value),
+                    avgSessionDuration: parseInt(document.getElementById('avgSessionDuration').value),
+                    socialActivityLevel: document.getElementById('socialActivityLevel').value,
+                    isGroupWatch: parseInt(document.getElementById('isGroupWatch').value),
+                    groupSize: parseInt(document.getElementById('groupSize').value),
+                    recentGenrePreference: document.getElementById('recentGenrePreference').value,
+                    avgRatingGiven: parseFloat(document.getElementById('avgRatingGiven').value)
+                };
+
+                // AI Scoring Algorithm
+                const recommendations = contentDatabase.map(content => {
+                    let score = 0;
+                    let reasons = [];
+
+                    // Mood matching (high weight)
+                    if (content.mood.includes(userInputs.mood)) {
+                        score += 30;
+                        reasons.push(`Perfect for ${userInputs.mood} mood`);
+                    }
+
+                    // Time slot matching
+                    if (content.timeSlots.includes(userInputs.hourOfDay)) {
+                        score += 20;
+                        reasons.push(`Ideal for ${getTimeSlotName(userInputs.hourOfDay)}`);
+                    }
+
+                    // Age group matching
+                    if (content.ageGroups.includes(userInputs.ageGroup)) {
+                        score += 25;
+                        reasons.push(`Great for ${userInputs.ageGroup.replace('_', ' ')} viewers`);
+                    }
+
+                    // Genre preference matching
+                    if (content.genre === userInputs.recentGenrePreference) {
+                        score += 35;
+                        reasons.push(`Matches your ${userInputs.recentGenrePreference} preference`);
+                    }
+
+                    // Group watching compatibility
+                    if (userInputs.isGroupWatch && content.groupFriendly) {
+                        score += 15;
+                        reasons.push(`Perfect for group watching`);
+                    }
+
+                    // Session duration matching
+                    const durationMatch = Math.abs(content.duration - userInputs.avgSessionDuration);
+                    if (durationMatch <= 30) {
+                        score += 10;
+                        reasons.push(`Matches your viewing time`);
+                    }
+
+                    // Weekend boost for longer content
+                    if (userInputs.isWeekend && content.duration > 90) {
+                        score += 10;
+                        reasons.push(`Weekend binge-worthy`);
+                    }
+
+                    // Social activity level influence
+                    if (userInputs.socialActivityLevel === 'high' && content.rating > 8.5) {
+                        score += 10;
+                        reasons.push(`Highly shareable content`);
+                    }
+
+                    // Rating preference alignment
+                    const ratingDiff = Math.abs(content.rating - userInputs.avgRatingGiven);
+                    if (ratingDiff <= 1) {
+                        score += 15;
+                        reasons.push(`Matches your rating preference`);
+                    }
+
+                    // Add some randomness for diversity
+                    score += Math.random() * 10;
+
+                    return {
+                        ...content,
+                        aiScore: Math.round(score),
+                        reasons: reasons.slice(0, 3) // Top 3 reasons
+                    };
+                }).sort((a, b) => b.aiScore - a.aiScore).slice(0, 5);
+
+                // Display recommendations
+                displayRecommendations(recommendations, userInputs);
+
+                // Reset button state
+                generateText.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+                generateBtn.disabled = false;
+            }, 2000); // 2 second delay for AI effect
+        }
+
+        function getTimeSlotName(hour) {
+            const timeSlots = {
+                6: 'early morning',
+                8: 'morning',
+                12: 'noon',
+                15: 'afternoon',
+                18: 'evening',
+                20: 'prime time',
+                22: 'night',
+                24: 'late night'
+            };
+            return timeSlots[hour] || 'current time';
+        }
+
+        function displayRecommendations(recommendations, userInputs) {
+            const container = document.getElementById('recommendationsContainer');
+            
+            if (recommendations.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center;opacity:0.6;padding:60px 20px;">
+                        <div style="font-size:3rem;margin-bottom:20px;">🤔</div>
+                        <p>No recommendations found. Try adjusting your preferences!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = recommendations.map((item, index) => `
+                <div class="recommendation-card" style="animation-delay: ${index * 0.1}s;">
+                    <div class="card-title">${item.title}</div>
+                    <div class="card-details">
+                        <span class="genre-tag">${item.genre.toUpperCase()}</span>
+                        <div class="rating">
+                            <span class="stars">⭐</span>
+                            <span>${item.rating}/10</span>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:10px;font-size:0.9rem;opacity:0.8;">
+                        Duration: ${item.duration} minutes
+                    </div>
+                    <div style="background:rgba(255,107,53,0.1);padding:10px;border-radius:8px;margin-bottom:10px;">
+                        <div style="font-weight:bold;color:#ff6b35;margin-bottom:5px;">
+                             AI Confidence: ${item.aiScore}%
+                        </div>
+                        <div style="font-size:0.9rem;opacity:0.9;">
+                            ${item.reasons.join(' • ')}
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:15px;">
+                        <button style="background:linear-gradient(45deg,#ff6b35,#f7931e);color:#fff;border:none;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:0.9rem;">
+                            ▶️ Watch Now
+                        </button>
+                        <button style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3);padding:8px 16px;border-radius:20px;cursor:pointer;font-size:0.9rem;">
+                            📋 Add to List
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add header with user context
+            const contextHeader = `
+                <div style="background:rgba(255,107,53,0.1);padding:20px;border-radius:15px;margin-bottom:25px;border-left:4px solid #ff6b35;">
+                    <h4 style="color:#ff6b35;margin-bottom:10px;">🤖 AI Analysis for ${userInputs.userId}</h4>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.9rem;opacity:0.9;">
+                        <div>😊 Mood: ${userInputs.mood}</div>
+                        <div>⏰ Time: ${getTimeSlotName(userInputs.hourOfDay)}</div>
+                        <div>👥 Group: ${userInputs.isGroupWatch ? `${userInputs.groupSize} people` : 'Solo'}</div>
+                        <div>🎬 Genre: ${userInputs.recentGenrePreference}</div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = contextHeader + html;
+        }
+
+        // Navigation smooth scrolling
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Update group size based on group watching selection
+        document.getElementById('isGroupWatch').addEventListener('change', function() {
+            const groupSizeSelect = document.getElementById('groupSize');
+            if (this.value === '0') {
+                groupSizeSelect.value = '1';
+                groupSizeSelect.disabled = true;
+            } else {
+                groupSizeSelect.disabled = false;
+                if (groupSizeSelect.value === '1') {
+                    groupSizeSelect.value = '2';
+                }
+            }
+        });
+
+        // Weekend detection based on day of week
+        document.getElementById('dayOfWeek').addEventListener('change', function() {
+            const isWeekendSelect = document.getElementById('isWeekend');
+            const day = parseInt(this.value);
+            if (day === 6 || day === 7) { // Saturday or Sunday
+                isWeekendSelect.value = '1';
+            } else {
+                isWeekendSelect.value = '0';
+            }
+        });
+
+        // Initialize demo on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set some default values for better demo experience
+            document.getElementById('userId').value = 'demo_user_001';
+            document.getElementById('avgSessionDuration').value = '75';
+            document.getElementById('avgRatingGiven').value = '7.8';
+            
+            // Animate vote bars on page load
+            setTimeout(() => {
+                document.querySelectorAll('.vote-fill').forEach(bar => {
+                    const width = bar.style.width;
+                    bar.style.width = '0%';
+                    setTimeout(() => {
+                        bar.style.width = width;
+                    }, 500);
+                });
+            }, 1000);
+        });
+
+        // Add some interactive effects
+        document.querySelectorAll('.checkbox-item').forEach(item => {
+            item.addEventListener('click', function() {
+                this.classList.toggle('selected');
+            });
+        });
+
+        // Simulate real-time updates for social voting
+        function updateVotingBars() {
+            const bars = document.querySelectorAll('.vote-fill');
+            bars.forEach(bar => {
+                const currentWidth = parseInt(bar.style.width);
+                const change = (Math.random() - 0.5) * 10; // Random change ±5%
+                const newWidth = Math.max(10, Math.min(90, currentWidth + change));
+                bar.style.width = newWidth + '%';
+                bar.parentElement.nextElementSibling.textContent = Math.round(newWidth) + '%';
+            });
+        }
+
+        // Update voting bars every 5 seconds for demo effect
+        setInterval(updateVotingBars, 5000);
+    </script>
+</body>
+</html>
