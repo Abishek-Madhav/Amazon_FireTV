@@ -6,7 +6,7 @@ Develop a personalized content recommendation engine for Fire TV that considers 
 
 # **Have a look!** #
 [Demo video of our prototype 🎥](https://www.youtube.com/watch?v=GM9HXfpF_uE)
-
+[Amazon FireTv Notebook 🌐](https://colab.research.google.com/drive/1L0XcQniNj8OcVBKkqRf__aMu1QXAEGuZ)
 
 ## **Proposed Solution** 💡
 
